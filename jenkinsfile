@@ -1,5 +1,5 @@
 pipeline {
-    agent {
+    agent { 
         label 'Docker_Maven'
     }
     environment { 
@@ -7,94 +7,85 @@ pipeline {
         PATH = "${MAVEN_HOME}/bin:${env.PATH}"
     }
     stages {
-        stage('cleaning directory') {
+        stage('Clean Workspace') {
             steps {
                 deleteDir()
             }
         }
-        stage('CloningGit') {
+        stage('Checkout Source') {
             steps {
-                echo "<><><><><><><><><><>"
-                echo "<>  Cloning Repo  <>"
-                echo "<><><><><><><><><><>"
+                echo "Cloning repository..."
                 sh 'git clone https://github.com/SarjakNEPAL/demo-example-pipeline.git .'
             }
         }
-        stage('Building the app\' war file') {
+        stage('Build Application') {
             steps {
-                echo "<><><><><><><><><><><><><>"
-                echo "<>  Building from Pom  <>"
-                echo "<><><><><><><><><><><><><>"
+                echo "Building the WAR file with Maven..."
                 sh 'mvn clean package'
             }
         }
-        stage('creating app image') {
-            steps { 
-                echo "Building docker image" 
-                sh 'docker build -t tomcat_app:$BUILD_NUMBER -f ./Dockerfile .' 
-            } 
-        }
-        stage('Deploy to Staging Environment') {
+        stage('Build Docker Image') {
             steps {
-                echo "Running app on staging env"
-                sh '''
-                docker stop stagingEnv || true
-                docker rm stagingEnv || true
-                docker run -itd --name stagingEnv -p 2025:8080 tomcat_app:$BUILD_NUMBER
-                '''
+                echo "Building the Docker image..."
+                sh 'docker build -t tomcat_app:$BUILD_NUMBER -f Dockerfile .'
             }
         }
-        
-        stage('Docker Compose') {
+        stage('Deploy to Staging') {
             steps {
-                echo "Deploying with Docker Compose"
+                echo "Deploying the Docker image to a staging environment..."
                 sh '''
-                docker compose -f ./docker-compose.yml up -d
+                    docker stop stagingEnv || true
+                    docker rm stagingEnv || true
+                    docker run -d --name stagingEnv -p 2025:8080 tomcat_app:$BUILD_NUMBER
                 '''
             }
         }
         stage('Create Artifact') {
             steps {
-                echo "Creating artifact"
-                sh '''
-                mkdir -p artifacts
-                cp target/your-app-${BUILD_NUMBER}.war artifacts/
-                '''
+                echo "Archiving artifact..."
+                sh """
+                    mkdir -p artifacts
+                    cp target/*.war artifacts/
+                """
                 archiveArtifacts artifacts: 'artifacts/**', fingerprint: true
             }
         }
-        stage('Ansible Deployment') {
-            agent {
-                label 'Ansible_Host'
-            }
+        stage('Deploy with Ansible') {
+            agent { label 'Ansible_Host' }
             steps {
-                echo "Deploying with Ansible"
-                sh '''
-                ansible-playbook -i inventory ansible/deploy.yml --extra-vars "artifact_version=$BUILD_NUMBER"
-                '''
+                echo "Deploying with Ansible..."
+                sh """
+                    ansible-playbook -i inventory ansible/deploy.yml --extra-vars "artifact_version=${BUILD_NUMBER}"
+                """
             }
         }
     }
     post {
         success {
             mail to: 'bhandarisarjak@gmail.com',
-                 subject: 'BUILD SUCCESS NOTIFICATION',
-                 body: """Hi Sarjak,
+                 subject: "BUILD SUCCESSFUL: Build #${BUILD_NUMBER}",
+                 body: """
+                 Hi,
 
-Build #${BUILD_NUMBER} is successful, please go through the URL: ${BUILD_URL}
+                 Build #${BUILD_NUMBER} completed successfully.
+                 You can view the details at: ${BUILD_URL}
 
-Regards,
-Jenkins"""
+                 Regards,
+                 Jenkins
+                 """
         }
         failure {
             mail to: 'bhandarisarjak@gmail.com',
-                 subject: 'BUILD FAILED NOTIFICATION',
-                 body: """Hi Sarjak,
+                 subject: "BUILD FAILED: Build #${BUILD_NUMBER}",
+                 body: """
+                 Hi,
 
-Build #${BUILD_NUMBER} failed, please go through the URL: ${BUILD_URL}
+                 Build #${BUILD_NUMBER} has failed.
+                 Please check the details at: ${BUILD_URL}
 
-Regards,
-Jenkins"""
+                 Regards,
+                 Jenkins
+                 """
         }
     }
 }
