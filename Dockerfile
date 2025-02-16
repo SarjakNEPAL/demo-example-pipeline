@@ -4,7 +4,7 @@ RUN useradd -m -s /bin/bash jenkin
 
 USER jenkin
 WORKDIR /usr/local/tomcat
-COPY --chown=jenkin:jenkin target/*.war /usr/local/tomcat/webapps/app.war
+COPY --chown=jenkin:jenkin target/*.war /usr/local/tomcat/webapps/ROOT.war
 
 EXPOSE 8080
 
