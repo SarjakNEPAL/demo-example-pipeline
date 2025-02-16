@@ -36,19 +36,13 @@ pipeline {
                 sh 'cd $temp' 
             } 
         }
-        stage('Trivy Scan') {
+      stage('Trivy Scan') {
             steps {
                 echo "Running Trivy scan on Docker image"
                 sh '''
-                if ! command -v trivy &> /dev/null
-                then
-                    echo "Trivy could not be found, installing..."
-                    curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -
-                    export PATH=$PATH:~/.local/bin
-                fi
-                trivy image --severity HIGH,CRITICAL tomcat_app:$BUILD_NUMBER
+                sudo trivy image --severity HIGH,CRITICAL tomcat_app:$BUILD_NUMBER
                 '''
-            }
+            
         }
         stage('Deploy to StagingEnvironment') {
             steps {
