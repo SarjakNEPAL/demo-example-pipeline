@@ -43,7 +43,7 @@ pipeline {
                 sudo trivy image --severity HIGH,CRITICAL tomcat_app:$BUILD_NUMBER
                 '''
             
-        }
+        }}
         stage('Deploy to StagingEnvironment') {
             steps {
                 echo "Running app on staging env"
