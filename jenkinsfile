@@ -40,7 +40,7 @@ pipeline {
             steps {
                 echo "Running Trivy scan on Docker image"
                 sh '''
-                sudo trivy image --severity HIGH,CRITICAL tomcat_app:$BUILD_NUMBER
+                trivy image --severity HIGH,CRITICAL tomcat_app:$BUILD_NUMBER
                 '''
             
         }}
