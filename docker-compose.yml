@@ -1,17 +1,9 @@
 services:
-  app:
+  web:
     image: tomcat_app:${BUILD_NUMBER}
-    container_name: stagingEnv
     ports:
-      - "2025:8080"
-    volumes:
-      - ./app/config:/usr/local/tomcat/conf
-      - ./app/logs:/usr/local/tomcat/logs
-    environment:
-      - ENV=staging
+      - "8080:8080"
     networks:
-      - app-network
-
+      - webnet
 networks:
-  app-network:
-    driver: bridge
+  webnet:
