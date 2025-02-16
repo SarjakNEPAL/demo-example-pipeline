@@ -1,0 +1,24 @@
+- name: presentation
+  hosts: all
+  tasks:
+    - name: Pull Docker image
+      docker_image:
+        name: your-dockerhub-username/tomcat_app
+        tag: "{{ image_version }}"
+        source: pull
+
+    - name: Stop existing container
+      docker_container:
+        name: productionEnv
+        state: absent
+
+    - name: Start new container
+      docker_container:
+        name: productionEnv
+        image: your-dockerhub-username/tomcat_app:{{ image_version }}
+        state: started
+        restart_policy: always
+        ports:
+          - "2085:8080"
+        volumes:
+          - /path/to/tomcat/webapps:/usr/local/tomcat/webapps
