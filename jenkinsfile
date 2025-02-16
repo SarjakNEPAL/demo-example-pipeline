@@ -13,7 +13,7 @@ pipeline {
                 echo "<><><><><><><><><><>"
                 echo "<>  Cloning Repo  <>"
                 echo "<><><><><><><><><><>"
-                sh 'git clone  '
+                sh 'git clone https://github.com/SarjakNEPAL/demo-example-pipeline.git'
             }
         }
 
