@@ -2,7 +2,7 @@ pipeline {
     agent {
         label 'Docker_Maven'
     }
-        environment { 
+    environment { 
         MAVEN_HOME = '/opt/apache-maven-3.9.9'
         PATH = "${MAVEN_HOME}/bin:${env.PATH}"
     }
@@ -20,7 +20,6 @@ pipeline {
                 sh 'git clone https://github.com/SarjakNEPAL/demo-example-pipeline.git .'
             }
         }
-
         stage('Building the app\' war file') {
             steps {
                 echo "<><><><><><><><><><><><><>"
@@ -29,25 +28,39 @@ pipeline {
                 sh 'mvn clean package'
             }
         }
-         stage('creating app image') {
+        stage('creating app image') {
             steps { 
                 echo "Building docker image" 
                 sh 'temp=$(pwd -P)' 
-                sh'docker build -t tomcat_app:$BUILD_NUMBER .' 
+                sh 'docker build -t tomcat_app:$BUILD_NUMBER -f Dockerfile .' 
                 sh 'cd $temp' 
-                } 
+            } 
+        }
+        stage('Trivy Scan') {
+            steps {
+                echo "Running Trivy scan on Docker image"
+                sh '''
+                if ! command -v trivy &> /dev/null
+                then
+                    echo "Trivy could not be found, installing..."
+                    curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -
+                    export PATH=$PATH:~/.local/bin
+                fi
+                trivy image --severity HIGH,CRITICAL tomcat_app:$BUILD_NUMBER
+                '''
             }
-            stage('Deploy to StagingEnvironment') {
-                steps {
-                    echo "Running app on staging env"
-                    sh '''
-                    docker stop stagingEnv || true
-                    docker rm stagingEnv || true
-                    docker run -itd --name stagingEnv -p 2025:8080 tomcat_app:$BUILD_NUMBER
-                    '''
-                }
+        }
+        stage('Deploy to StagingEnvironment') {
+            steps {
+                echo "Running app on staging env"
+                sh '''
+                docker stop stagingEnv || true
+                docker rm stagingEnv || true
+                docker run -itd --name stagingEnv -p 2025:8080 tomcat_app:$BUILD_NUMBER
+                '''
             }
-        stage('Depoying To Production') {
+        }
+        stage('Deploying To Production') {
             steps {
                 timeout(time: 2, unit: 'DAYS') {
                     input message: 'Do you approve?'
