@@ -44,24 +44,12 @@ pipeline {
                 '''
             }
         }
-        stage('Deploying To Production') {
-            steps {
-                timeout(time: 2, unit: 'DAYS') {
-                    input message: 'Do you approve?'
-                }
-                echo "Running app on productionEnvironment"
-                sh '''
-                docker stop productionEnv || true
-                docker rm productionEnv || true
-                docker run -itd --name productionEnv -p 2085:8080 tomcat_app:$BUILD_NUMBER
-                '''
-            }
-        }
+        
         stage('Docker Compose') {
             steps {
                 echo "Deploying with Docker Compose"
                 sh '''
-                docker-compose -f ./docker-compose.yml up -d
+                docker compose -f ./docker-compose.yml up -d
                 '''
             }
         }
