@@ -32,7 +32,7 @@ pipeline {
             steps { 
                 echo "Building docker image" 
                 sh 'temp=$(pwd -P)' 
-                sh 'docker build -t tomcat_app:$BUILD_NUMBER -f Dockerfile .' 
+                sh 'docker build -t tomcat_app:$BUILD_NUMBER -f ./Dockerfile .' 
                 sh 'cd $temp' 
             } 
         }
